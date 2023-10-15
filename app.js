@@ -3,6 +3,10 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const User = require("./models/user");
 const app = express();
+const cors = require('cors');
+
+app.use(cors());
+app.use(express.json());
 
 const port = process.env.PORT;
 const MONGO_DB_URI = process.env.MONGO_DB_URL;
@@ -77,6 +81,41 @@ app.get("/users/:username/availability", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+
+app.post("/users/:username/availability", async (req, res) => {
+    const { username } = req.params;
+    const {updates}  = req.body;
+    console.log(updates)
+    try {
+      const user = await User.findOne({ username });
+  
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      updates.forEach((update) => {
+        const { weekNumber, availableDays } = update;
+      
+        if (!weekNumber || !Number.isInteger(weekNumber)) {
+          return res.status(400).json({ message: "Invalid weekNumber provided" });
+        }
+      
+        const index = user.availability.findIndex((week) => week.weekNumber === weekNumber);
+      
+        if (index !== -1) {
+            user.availability[index].availableDays = availableDays;
+          }
+      });
+  
+      await user.save();
+  
+      res.json({ message: "Availability updated successfully", updatedAvailability: user.availability });
+    } catch (error) {
+      console.error("Error updating user availability:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+  
 
 app.use((req, res) => {
   res.send("Hello World");
