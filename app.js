@@ -227,7 +227,8 @@ app.post("/users/:username/availability", async (req, res) => {
       res.status(500).json({ error: 'Internal Server Error' });
     }
   });
-  
+
+
   
 
 app.use((req, res) => {
