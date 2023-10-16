@@ -1,3 +1,3 @@
-# backend
+# Dynamic Availability schedule 
 
-This is a backend part for the unfair advantage challendge
+https://available-days-0ac96bea41d2.herokuapp.com
