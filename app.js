@@ -11,59 +11,135 @@ app.use(express.json());
 const port = process.env.PORT;
 const MONGO_DB_URI = process.env.MONGO_DB_URL;
 
-const user1 = new User({
-  username: "user1",
-  availability: [
-    {
-      weekNumber: 1,
-      availableDays: [
-        { day: "Mon" },
-        { day: "Tue" },
-        { day: "Wed" },
-        { day: "Thu" },
-        { day: "Fri" },
-      ],
-    },
-    {
-      weekNumber: 2,
-      availableDays: [
-        { day: "Tue" },
-        { day: "Wed" },
-        { day: "Thu" },
-        { day: "Fri" },
-      ],
-    },
-    {
-      weekNumber: 3,
-      availableDays: [{ day: "Wed" }, { day: "Thu" }, { day: "Fri" }],
-    },
-    {
-      weekNumber: 4,
-      availableDays: [{ day: "Thu" }, { day: "Fri" }],
-    },
-    {
-      weekNumber: 5,
-      availableDays: [{ day: "Mon" }, { day: "Tue" }, { day: "Wed" }],
-    },
-    {
-      weekNumber: 6,
-      availableDays: [
-        { day: "Mon" },
-        { day: "Tue" },
-        { day: "Wed" },
-        { day: "Thu" },
-      ],
-    },
-    {
-      weekNumber: 7,
-      availableDays: [{ day: "Mon" }, { day: "Tue" }],
-    },
-  ],
-});
+// const user1 = new User({
+//     username: 'sampleUser',
+//     availability: [
+//       {
+//         weekNumber: 1,
+//         intervals: [
+//           {
+//             intervalNumber: 1,
+//             availableDays: [
+//               { day: 'Mon' },
+//               { day: 'Tue' },
+//             ],
+//           },
+//           {
+//             intervalNumber: 2,
+//             availableDays: [
+//               { day: 'Thu' },
+//               { day: 'Fri' },
+//             ],
+//           },
+//         ],
+//       },
+//       {
+//         weekNumber: 2,
+//         intervals: [
+//           {
+//             intervalNumber: 1,
+//             availableDays: [
+//               { day: 'Mon' },
+//               { day: 'Tue' },
+//             ],
+//           },
+//           {
+//             intervalNumber: 2,
+//             availableDays: [
+//               { day: 'Wed' },
+//               { day: 'Thu' },
+//               { day: 'Fri' },
+//             ],
+//           },
+//         ],
+//       },
+//       {
+//         weekNumber: 3,
+//         intervals: [
+//           {
+//             intervalNumber: 1,
+//             availableDays: [
+//               { day: 'Mon' },
+//               { day: 'Tue' },
+//               { day: 'Wed' },
+//             ],
+//           },
+//         ],
+//       },
+//       {
+//         weekNumber: 4,
+//         intervals: [
+//           {
+//             intervalNumber: 1,
+//             availableDays: [
+//               { day: 'Fri' },
+//             ],
+//           },
+//         ],
+//       },
+//       {
+//         weekNumber: 5,
+//         intervals: [
+//           {
+//             intervalNumber: 1,
+//             availableDays: [
+//               { day: 'Sat' },
+//               { day: 'Sun' },
+//             ],
+//           },
+//           {
+//             intervalNumber: 2,
+//             availableDays: [
+//               { day: 'Mon' },
+//               { day: 'Tue' },
+//               { day: 'Wed' },
+//             ],
+//           },
+//         ],
+//       },
+//       {
+//         weekNumber: 6,
+//         intervals: [
+//           {
+//             intervalNumber: 1,
+//             availableDays: [
+//               { day: 'Tue' },
+//               { day: 'Wed' },
+//             ],
+//           },
+//           {
+//             intervalNumber: 2,
+//             availableDays: [
+//               { day: 'Sat' },
+//             ],
+//           },
+//         ],
+//       },
+//       {
+//         weekNumber: 7,
+//         intervals: [
+//           {
+//             intervalNumber: 1,
+//             availableDays: [
+//               { day: 'Sun' },
+//             ],
+//           },
+//         ],
+//       },
+//     ],
+//   });
+  
+// user1.save()
+//     .then(() => {
+//       console.log('Sample user created successfully');
+//     })
+//     .catch((error) => {
+//       console.error('Error creating sample user:', error);
+//     })
+//     .finally(() => {
+//       mongoose.connection.close();
+//     });
 
-user1.save().then(() => {
-  console.log("User saved");
-});
 
 app.get("/users/:username/availability", async (req, res) => {
   const { username } = req.params;
@@ -84,27 +160,43 @@ app.get("/users/:username/availability", async (req, res) => {
 
 app.post("/users/:username/availability", async (req, res) => {
     const { username } = req.params;
-    const {updates}  = req.body;
-    console.log(updates)
+    const { updates } = req.body;
+  
     try {
       const user = await User.findOne({ username });
   
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-
+  
       updates.forEach((update) => {
-        const { weekNumber, availableDays } = update;
-      
-        if (!weekNumber || !Number.isInteger(weekNumber)) {
-          return res.status(400).json({ message: "Invalid weekNumber provided" });
+        const { weekNumber, intervals } = update;
+
+        console.log(update)
+  
+        if (!weekNumber || !Number.isInteger(weekNumber) || !Array.isArray(intervals)) {
+          return res.status(400).json({ message: "Invalid data provided" });
         }
-      
+  
         const index = user.availability.findIndex((week) => week.weekNumber === weekNumber);
-      
+  
         if (index !== -1) {
-            user.availability[index].availableDays = availableDays;
-          }
+          intervals.forEach((newInterval) => {
+            const { intervalNumber, availableDays } = newInterval;
+  
+            if (!intervalNumber || !Number.isInteger(intervalNumber) || !Array.isArray(availableDays)) {
+              return res.status(400).json({ message: "Invalid interval data provided" });
+            }
+  
+            const intervalIndex = user.availability[index].intervals.findIndex(
+              (interval) => interval.intervalNumber === intervalNumber
+            );
+  
+            if (intervalIndex !== -1) {
+              user.availability[index].intervals[intervalIndex].availableDays = availableDays;
+            }
+          });
+        }
       });
   
       await user.save();
@@ -115,6 +207,7 @@ app.post("/users/:username/availability", async (req, res) => {
       res.status(500).send("Internal Server Error");
     }
   });
+  
   
 
 app.use((req, res) => {

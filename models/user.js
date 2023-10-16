@@ -12,17 +12,28 @@ const userSchema = new mongoose.Schema({
           type: Number,
           required: true,
         },
-        availableDays: {
+        intervals: {
           type: [
             {
-              day: {
-                type: String,
-                enum: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+              intervalNumber: {
+                type: Number,
+                required: true,
+              },
+              availableDays: {
+                type: [
+                  {
+                    day: {
+                      type: String,
+                      enum: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                      required: true,
+                    },
+                  },
+                ],
                 required: true,
               },
             },
           ],
-          required: true,
+          default: [],
         },
       },
     ],
