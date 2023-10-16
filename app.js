@@ -3,7 +3,7 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const User = require("./models/user");
 const app = express();
-const cors = require('cors');
+const cors = require("cors");
 
 app.use(cors());
 app.use(express.json());
@@ -128,7 +128,7 @@ const MONGO_DB_URI = process.env.MONGO_DB_URL;
 //       },
 //     ],
 //   });
-  
+
 // user1.save()
 //     .then(() => {
 //       console.log('Sample user created successfully');
@@ -139,7 +139,6 @@ const MONGO_DB_URI = process.env.MONGO_DB_URL;
 //     .finally(() => {
 //       mongoose.connection.close();
 //     });
-
 
 app.get("/users/:username/availability", async (req, res) => {
   const { username } = req.params;
@@ -171,21 +170,33 @@ app.post("/users/:username/availability", async (req, res) => {
   
       updates.forEach((update) => {
         const { weekNumber, intervals } = update;
-
-        console.log(update)
   
-        if (!weekNumber || !Number.isInteger(weekNumber) || !Array.isArray(intervals)) {
+        console.log(update);
+  
+        if (
+          !weekNumber ||
+          !Number.isInteger(weekNumber) ||
+          !Array.isArray(intervals)
+        ) {
           return res.status(400).json({ message: "Invalid data provided" });
         }
   
-        const index = user.availability.findIndex((week) => week.weekNumber === weekNumber);
+        const index = user.availability.findIndex(
+          (week) => week.weekNumber === weekNumber
+        );
   
         if (index !== -1) {
           intervals.forEach((newInterval) => {
             const { intervalNumber, availableDays } = newInterval;
   
-            if (!intervalNumber || !Number.isInteger(intervalNumber) || !Array.isArray(availableDays)) {
-              return res.status(400).json({ message: "Invalid interval data provided" });
+            if (
+              !intervalNumber ||
+              !Number.isInteger(intervalNumber) ||
+              !Array.isArray(availableDays)
+            ) {
+              return res
+                .status(400)
+                .json({ message: "Invalid interval data provided" });
             }
   
             const intervalIndex = user.availability[index].intervals.findIndex(
@@ -193,42 +204,39 @@ app.post("/users/:username/availability", async (req, res) => {
             );
   
             if (intervalIndex !== -1) {
-              user.availability[index].intervals[intervalIndex].availableDays = availableDays;
+
+              user.availability[index].intervals[intervalIndex].availableDays =
+                availableDays;
+            } else {
+
+              const newInterval = {
+                intervalNumber,
+                availableDays,
+              };
+              user.availability[index].intervals.push(newInterval);
             }
           });
+  
+          user.availability[index].intervals = user.availability[index].intervals.filter(
+            (interval) =>
+              intervals.some(
+                (newInterval) => newInterval.intervalNumber === interval.intervalNumber
+              )
+          );
         }
       });
   
       await user.save();
   
-      res.json({ message: "Availability updated successfully", updatedAvailability: user.availability });
+      res.json({
+        message: "Availability updated successfully",
+        updatedAvailability: user.availability,
+      });
     } catch (error) {
       console.error("Error updating user availability:", error);
       res.status(500).send("Internal Server Error");
     }
   });
-
-  app.delete('/:username/delete-interval/:id', async (req, res) => {
-    const { username, id } = req.params;
-  
-    try {
-      const result = await User.updateOne(
-        { username, 'availability.intervals._id': id },
-        { $pull: { 'availability.$.intervals': { _id: id } } }
-      );
-  
-      if (result.nModified > 0) {
-        res.status(200).json({ message: 'Interval deleted successfully' });
-      } else {
-        res.status(404).json({ error: 'Interval not found' });
-      }
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    }
-  });
-
-
   
 
 app.use((req, res) => {
