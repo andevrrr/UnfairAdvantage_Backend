@@ -207,6 +207,26 @@ app.post("/users/:username/availability", async (req, res) => {
       res.status(500).send("Internal Server Error");
     }
   });
+
+  app.delete('/:username/delete-interval/:id', async (req, res) => {
+    const { username, id } = req.params;
+  
+    try {
+      const result = await User.updateOne(
+        { username, 'availability.intervals._id': id },
+        { $pull: { 'availability.$.intervals': { _id: id } } }
+      );
+  
+      if (result.nModified > 0) {
+        res.status(200).json({ message: 'Interval deleted successfully' });
+      } else {
+        res.status(404).json({ error: 'Interval not found' });
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
   
   
 
